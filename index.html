@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deployment &amp; DevOps — Helden 72</title>
+<meta name="description" content="Panduan deployment gratis per use case untuk peserta Helden 72 Chapter 2.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --void:#0A0A0A; --surface:#141210; --surface-2:#1C1608; --surface-bad:#1E1210;
+    --line:#2A251E; --line-gold:#5C4A0E; --line-bad:#5C2A1E;
+    --gold:#F9C800; --gold-dim:#8a6f06; --coral:#FF5630;
+    --ink:#ffffff; --muted:#8F857A; --muted-2:#8a7f72;
+    --display:'Bricolage Grotesque',Impact,'Arial Black',sans-serif;
+    --body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --r:14px; --r-lg:18px;
+    --pad-x:clamp(22px,5vw,88px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:var(--body); color:var(--ink); background:var(--void);
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  ::selection{background:var(--gold);color:var(--void)}
+
+  /* ---------- deck shell ---------- */
+  .deck{position:fixed;inset:0;overflow:hidden}
+  .track{display:flex;height:100%;width:100%;transition:transform .5s cubic-bezier(.22,1,.36,1)}
+  .slide{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;display:flex;align-items:center;justify-content:center;padding:clamp(70px,11vh,104px) var(--pad-x) clamp(66px,10vh,86px)}
+  .inner{width:100%;max-width:1180px;margin:auto}
+
+  /* ---------- signature: the pipeline rail ---------- */
+  /* the deck progress bar and every deploy chain are the same object */
+  .rail{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:40;
+        transition:width .5s cubic-bezier(.22,1,.36,1);box-shadow:0 0 14px rgba(249,200,0,.55)}
+  .railbed{position:fixed;top:0;left:0;right:0;height:2px;background:var(--line);z-index:39}
+
+  /* ---------- chrome ---------- */
+  .topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;
+          padding:20px var(--pad-x);z-index:30;pointer-events:none}
+  .brand{display:flex;align-items:baseline;gap:9px;pointer-events:auto}
+  .wm{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.02em;line-height:1}
+  .wm i{font-style:normal;color:var(--gold)}
+  .sep{width:1px;height:15px;background:var(--line);margin:0 5px;align-self:center}
+  .ctx{font-size:10.5px;font-weight:600;color:var(--muted-2);letter-spacing:.16em;text-transform:uppercase;align-self:center}
+  .counter{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted-2);pointer-events:auto}
+  .counter b{color:var(--gold);font-weight:600}
+
+  .nav{position:fixed;bottom:22px;right:var(--pad-x);display:flex;gap:8px;z-index:30}
+  .nav button{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--surface);
+              color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+  .nav button:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+  .nav button:disabled{opacity:.28;cursor:default}
+  .nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .nav svg{width:17px;height:17px}
+
+  .dots{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:30}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--line);border:none;padding:0;cursor:pointer;transition:.25s}
+  .dot:hover{background:var(--gold-dim)}
+  .dot.on{width:20px;border-radius:4px;background:var(--gold)}
+  .dot:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  .hint{position:fixed;bottom:26px;left:var(--pad-x);font-size:11px;color:var(--muted-2);z-index:30;display:flex;align-items:center;gap:6px}
+  .kbd{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--line);
+       border-radius:5px;padding:2px 6px}
+
+  /* ---------- typography ---------- */
+  .eyebrow{display:block;font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  h1{font-family:var(--display);font-weight:800;font-size:clamp(38px,6vw,76px);line-height:.98;letter-spacing:-.025em;margin:0;text-wrap:balance}
+  h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.6vw,44px);line-height:1.02;letter-spacing:-.02em;margin:0 0 12px;text-wrap:balance}
+  h1 em,h2 em{font-style:normal;color:var(--gold)}
+  .lead{font-size:clamp(14px,1.45vw,17px);line-height:1.6;color:var(--muted);max-width:64ch;margin:16px 0 0}
+  code{font-family:var(--mono);font-size:.88em;color:var(--gold);background:rgba(249,200,0,.08);
+       border:1px solid rgba(249,200,0,.16);border-radius:5px;padding:1px 5px}
+
+  /* ---------- cover ---------- */
+  .cover .inner{display:grid;grid-template-columns:1.55fr .95fr;gap:clamp(24px,4vw,64px);align-items:center}
+  .cover h1{margin-bottom:20px}
+  .underline{display:block;width:min(340px,64%);height:5px;background:var(--gold);margin:18px 0 0;border-radius:2px}
+  .pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:30px}
+  .pill{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);
+        border:1px solid var(--line-gold);border-radius:999px;padding:7px 14px}
+  .clock{background:var(--surface);border:1px solid var(--line-gold);border-radius:var(--r-lg);padding:26px 26px 22px}
+  .clock .cap{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2)}
+  .clock .big{font-family:var(--mono);font-weight:600;font-size:clamp(34px,4.4vw,50px);color:var(--gold);
+               letter-spacing:-.02em;margin:10px 0 16px;line-height:1}
+  .clock hr{border:none;border-top:1px solid var(--line);margin:0 0 14px}
+  .clock .row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:600;padding:5px 0}
+  .clock .row span:first-child{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .clock .foot{font-size:12px;color:var(--muted);margin:14px 0 0;line-height:1.5}
+
+  /* ---------- generic cards ---------- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+
+  /* ---------- steps (a real sequence, so numbers earn their place) ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:34px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+  .step .n{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--void);background:var(--gold);
+           border-radius:6px;padding:3px 8px;display:inline-block}
+  .step h3{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;margin:14px 0 7px}
+  .step p{margin:0;font-size:13.5px;line-height:1.55;color:var(--muted)}
+
+  /* ---------- toolbox ---------- */
+  .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+  .tool{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:17px;transition:.2s}
+  .tool:hover{border-color:var(--line-gold);transform:translateY(-2px)}
+  .tool .cat{display:flex;align-items:center;gap:9px;font-size:10.5px;font-weight:700;letter-spacing:.09em;
+             text-transform:uppercase;color:var(--ink);margin-bottom:13px}
+  .tool .ico{width:24px;height:24px;border-radius:7px;background:rgba(249,200,0,.11);color:var(--gold);
+             display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .tool .ico svg{width:14px;height:14px}
+  .tool ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px}
+  .tool li{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+  /* ---------- checklist (not a sequence — no numbers) ---------- */
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+  .check{display:flex;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:17px 19px}
+  .check.key{background:var(--surface-2);border-color:var(--line-gold)}
+  .check .tick{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--gold);color:var(--void);
+               display:flex;align-items:center;justify-content:center}
+  .check .tick svg{width:15px;height:15px}
+  .check h3{font-family:var(--display);font-weight:700;font-size:15.5px;letter-spacing:-.01em;margin:2px 0 5px}
+  .check p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+
+  /* ---------- use case ---------- */
+  .uc-head{display:flex;align-items:baseline;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .uc-tag{font-size:13.5px;color:var(--muted)}
+  .uc-tag b{color:var(--gold);font-weight:600}
+  .uc-grid{display:grid;grid-template-columns:1.12fr 1fr;gap:14px;margin-top:22px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px}
+  .panel-label{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);margin:0 0 12px}
+  .srow{display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .srow:last-child{border-bottom:none;padding-bottom:0}
+  .srow .role{flex:0 0 108px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2)}
+  .srow .val{font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--ink);flex:1}
+  .free{font-family:var(--body);font-size:9.5px;font-weight:700;letter-spacing:.08em;color:var(--void);
+        background:var(--gold);border-radius:4px;padding:2px 6px;margin-left:8px;vertical-align:2px}
+  .rcol{display:flex;flex-direction:column;gap:14px}
+  .note{padding:16px 18px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface)}
+  .note.gotcha{background:var(--surface-2);border-color:var(--line-gold)}
+  .nlabel{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.16em;
+          text-transform:uppercase;margin-bottom:8px;color:var(--ink)}
+  .note.gotcha .nlabel{color:var(--gold)}
+  .nlabel svg{width:13px;height:13px;color:var(--gold)}
+  .note p{margin:0;font-size:13.5px;line-height:1.6;color:var(--muted)}
+  .note.gotcha p{color:#d8cfc2}
+
+  /* ---------- pipeline: the signature, reused ---------- */
+  .pipe{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-top:20px}
+  .pipe .plabel{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);margin-right:14px}
+  .pipe .node{font-family:var(--mono);font-size:12.5px;font-weight:600;background:var(--surface);
+              border:1px solid var(--line);border-radius:8px;padding:8px 13px;white-space:nowrap}
+  .pipe .node.live{background:var(--gold);color:var(--void);border-color:var(--gold)}
+  .pipe .seg{width:22px;height:1px;background:var(--line-gold);flex:0 0 auto}
+
+  /* ---------- table ---------- */
+  .tablewrap{margin-top:22px;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+  table{border-collapse:collapse;width:100%}
+  thead th{background:var(--gold);color:var(--void);font-size:10.5px;font-weight:700;letter-spacing:.12em;
+           text-transform:uppercase;text-align:left;padding:12px 18px}
+  tbody td{padding:14px 18px;border-top:1px solid var(--line);font-size:13.5px;vertical-align:middle;background:var(--surface)}
+  tbody tr:hover td{background:#191614}
+  td.uc{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:-.01em}
+  td.stack{font-family:var(--mono);font-size:12.5px;color:var(--gold)}
+  td.key{color:var(--muted)}
+  .caption{margin-top:16px;font-size:13px;color:var(--muted);font-style:italic}
+
+  /* ---------- pitfalls ---------- */
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+  .vs-head{font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:0 2px 2px}
+  .vs-head.bad{color:var(--coral)} .vs-head.good{color:var(--gold)}
+  .pit,.fix{border-radius:var(--r);padding:13px 16px;border:1px solid var(--line);font-size:13.5px;line-height:1.5;
+            display:flex;gap:11px;align-items:center;background:var(--surface)}
+  .pit{background:var(--surface-bad);border-color:var(--line-bad)}
+  .fix{border-color:var(--line-gold)}
+  .pit .i,.fix .i{flex:0 0 auto;display:flex}
+  .pit .i svg,.fix .i svg{width:15px;height:15px}
+  .pit .i{color:var(--coral)} .fix .i{color:var(--gold)}
+  .pit span:last-child,.fix span:last-child{color:var(--muted)}
+  .fix b{color:var(--ink);font-weight:600}
+
+  /* ---------- closing ---------- */
+  .deliver{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+  .dl{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
+      border-radius:var(--r);padding:17px 19px}
+  .dl .badge{flex:0 0 auto;width:32px;height:32px;border-radius:9px;background:rgba(249,200,0,.11);color:var(--gold);
+             display:flex;align-items:center;justify-content:center}
+  .dl .badge svg{width:17px;height:17px}
+  .dl .t{font-family:var(--display);font-weight:700;font-size:15px}
+  .dl .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .signoff{margin-top:32px;font-family:var(--display);font-weight:800;font-size:clamp(22px,3.2vw,40px);
+           line-height:1.05;letter-spacing:-.02em}
+  .signoff em{font-style:normal;color:var(--gold)}
+  .closing .lead{margin-top:14px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:980px){
+    .cover .inner{grid-template-columns:1fr}
+    .tools{grid-template-columns:repeat(2,1fr)}
+    .steps{grid-template-columns:1fr}
+    .checks,.uc-grid,.vs,.deliver{grid-template-columns:1fr}
+    .ctx,.sep,.hint{display:none}
+    .slide{padding-top:76px}
+  }
+  @media (max-width:600px){
+    :root{--pad-x:18px}
+    .slide{padding:66px 18px 74px}
+    h1{font-size:clamp(30px,9vw,40px)}
+    h2{font-size:clamp(22px,6.4vw,30px)}
+    .lead{font-size:13px;margin-top:12px}
+    .steps,.tools,.checks,.deliver,.vs{gap:9px;margin-top:16px}
+    .step,.tool,.check,.dl,.panel,.note{padding:13px 15px}
+    .step h3,.check h3{font-size:14px}
+    .step p,.check p,.note p,.dl .s{font-size:12.5px}
+    .tool li,.srow .val,.pipe .node{font-size:11.5px}
+    .srow{padding:7px 0}
+    .srow .role{flex-basis:88px;font-size:9.5px}
+    .pills{margin-top:18px}
+    .clock{padding:18px}
+    .signoff{margin-top:20px}
+    .pit,.fix{padding:10px 13px;font-size:12.5px}
+    table{font-size:12px}
+    thead th,tbody td{padding:9px 11px}
+    td.uc{font-size:13px} td.stack{font-size:11px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .track,.rail{transition:none}
+    .tool:hover{transform:none}
+  }
+</style>
+
+<div class="railbed"></div>
+<div class="rail" id="rail"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="wm">helden <i>72</i></span>
+    <span class="sep"></span>
+    <span class="ctx">Deployment &amp; DevOps</span>
+  </div>
+  <div class="counter"><b id="cur">01</b> / <span id="total">11</span></div>
+</div>
+
+<div class="deck">
+  <div class="track" id="track">
+
+    <!-- 1 · COVER -->
+    <section class="slide cover">
+      <div class="inner">
+        <div>
+          <span class="eyebrow">Helden 72 · Chapter 2 · Sesi panitia</span>
+          <h1>Deployment<br><em>&amp; DevOps</em>.</h1>
+          <span class="underline"></span>
+          <p class="lead">Cara men-<em style="color:inherit;font-style:italic">deploy</em> proyek kamu pakai tools gratis — dengan rekomendasi stack spesifik untuk setiap use case, biar 72 jam dipakai membangun, bukan berkutat infrastruktur.</p>
+          <div class="pills">
+            <span class="pill">4 use case</span>
+            <span class="pill">Semua stack free-tier</span>
+            <span class="pill">Push-to-deploy = CI/CD gratis</span>
+          </div>
+        </div>
+        <div class="clock">
+          <div class="cap">Waktu yang kamu punya</div>
+          <div class="big">72:00:00</div>
+          <hr>
+          <div class="row"><span>jam ke-1</span><span>deploy</span></div>
+          <div class="row"><span>jam ke-72</span><span>demo</span></div>
+          <p class="foot">Yang di antaranya cuma isi fitur di atas pipeline yang sudah jalan.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 · ATURAN #1 -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Aturan #1</span>
+        <h1>Deploy di <em>hari-1</em>,<br>bukan jam ke-71.</h1>
+        <p class="lead">Proyek yang tidak ter-deploy sama dengan proyek yang tidak ada saat penjurian. Online-kan “Hello World” dulu, baru isi fitur di atas pipeline yang sudah jalan.</p>
+        <div class="steps">
+          <div class="step">
+            <span class="n">01</span>
+            <h3>Git push, auto deploy</h3>
+            <p>Vercel, Netlify, dan Railway memasang CI/CD gratis otomatis: tiap <code>push</code> ke <code>main</code> langsung ter-build dan tayang.</p>
+          </div>
+          <div class="step">
+            <span class="n">02</span>
+            <h3>Demo link hidup sejak awal</h3>
+            <p>Satu URL yang selalu bisa dibuka. Tidak ada drama integrasi mendadak di malam terakhir.</p>
+          </div>
+          <div class="step">
+            <span class="n">03</span>
+            <h3>Teruji di environment asli</h3>
+            <p>Tiap commit jalan di server sungguhan, bukan “works on my machine” yang ambruk saat demo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · TOOLBOX -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Peta tools gratis</span>
+        <h2>Universal free toolbox</h2>
+        <p class="lead">Hampir semua kebutuhan 72 jam tertutup free-tier. Pilih dari sini sesuai case-mu.</p>
+        <div class="tools">
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_GLOBE}}</span>Host web / frontend</div>
+            <ul><li>Vercel</li><li>Netlify</li><li>Cloudflare Pages</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_DB}}</span>Database + auth</div>
+            <ul><li>Supabase</li><li>Neon</li><li>Firebase</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_WIFI}}</span>Offline / PWA</div>
+            <ul><li>Service Worker</li><li>Workbox</li><li>Dexie (IndexedDB)</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_MAP}}</span>Peta &amp; chart</div>
+            <ul><li>Leaflet + OSM</li><li>Recharts</li><li>Tremor</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_SERVER}}</span>Backend / worker</div>
+            <ul><li>Railway</li><li>Render</li><li>Fly.io</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_BOT}}</span>AI / LLM API</div>
+            <ul><li>Claude API</li><li>(credit-based)</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_DATA}}</span>Data dummy &amp; i18n</div>
+            <ul><li>Faker.js</li><li>next-intl</li><li>i18next</li></ul></div>
+          <div class="tool"><div class="cat"><span class="ico">{{ICO_LOCK}}</span>Secrets</div>
+            <ul><li>Env vars</li><li>.env → .gitignore</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · WAJIB -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Berlaku untuk semua tim</span>
+        <h2>Enam hal wajib, apa pun case-nya</h2>
+        <div class="checks">
+          <div class="check"><div class="tick">{{ICO_CHECK}}</div>
+            <div><h3>Git dari jam 0</h3><p>Repo dan commit sering sejak awal. Source code repository adalah deliverable wajib penjurian.</p></div></div>
+          <div class="check"><div class="tick">{{ICO_CHECK}}</div>
+            <div><h3>Secrets di env vars</h3><p>API key tidak pernah masuk Git. <code>.env</code> ke <code>.gitignore</code>, isi value di dashboard platform.</p></div></div>
+          <div class="check"><div class="tick">{{ICO_CHECK}}</div>
+            <div><h3>Satu demo URL yang hidup</h3><p>Bagikan link tayang ke juri, bukan <code>localhost</code>, bukan screenshot.</p></div></div>
+          <div class="check"><div class="tick">{{ICO_CHECK}}</div>
+            <div><h3>Offline-first sejak awal</h3><p>Tiga dari empat case mengasumsikan sinyal mati. Offline yang ditambal di jam ke-60 selalu gagal.</p></div></div>
+          <div class="check"><div class="tick">{{ICO_CHECK}}</div>
+            <div><h3>Seed data berlabel simulasi</h3><p>Demo harus terlihat hidup. Angka masuk akal, dan diberi label simulasi di prototipe maupun deck.</p></div></div>
+          <div class="check key"><div class="tick">{{ICO_TARGET}}</div>
+            <div><h3>Satu core flow &gt; enam fitur setengah</h3><p>Selesaikan satu alur inti end-to-end sebelum menyentuh stretch goal.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · MONITORING PARIWISATA -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Use case 01 / 04</span>
+        <div class="uc-head">
+          <h2>Monitoring Pariwisata Daerah</h2>
+          <div class="uc-tag"><b>Dashboard dinas + input pengelola</b> · offline-first</div>
+        </div>
+        <div class="uc-grid">
+          <div class="panel">
+            <p class="panel-label">Stack gratis</p>
+            <div class="srow"><span class="role">Frontend</span><span class="val">Next.js PWA → Vercel<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">DB · Auth</span><span class="val">Supabase (Postgres + RLS)<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">Offline</span><span class="val">Service Worker + Dexie</span></div>
+            <div class="srow"><span class="role">Peta · Chart</span><span class="val">Leaflet + OSM · Recharts</span></div>
+          </div>
+          <div class="rcol">
+            <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
+              <p>Bobot penilaian terbesar ada di <b>akurasi data (30%)</b>, bukan tampilan. Postgres + RLS bikin tiap pengelola hanya melihat destinasinya sendiri, dinas melihat semuanya.</p></div>
+            <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
+              <p>Sinyal lemah di pesisir dan perbukitan, jadi offline itu wajib dan bukan tambahan. Hitung pendapatan dari <b>rentang nomor seri karcis</b>, bukan total yang diketik. Seed 12–24 bulan supaya musiman terlihat.</p></div>
+          </div>
+        </div>
+        <div class="pipe"><span class="plabel">Deploy</span>
+          <span class="node">git push</span><span class="seg"></span>
+          <span class="node">Vercel build</span><span class="seg"></span>
+          <span class="node">Supabase + RLS</span><span class="seg"></span>
+          <span class="node live">Live URL</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 · SOLO TECHNOPARK -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Use case 02 / 04</span>
+        <div class="uc-head">
+          <h2>Solo Technopark</h2>
+          <div class="uc-tag"><b>Peta game interaktif</b> · QR checkpoint · dua bahasa</div>
+        </div>
+        <div class="uc-grid">
+          <div class="panel">
+            <p class="panel-label">Stack gratis</p>
+            <div class="srow"><span class="role">Frontend</span><span class="val">Next.js / Vite → Vercel<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">Peta</span><span class="val">SVG 2D ilustratif, bukan 3D</span></div>
+            <div class="srow"><span class="role">Konten · CMS</span><span class="val">Supabase / JSON + admin page<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">i18n</span><span class="val">next-intl, teks eksternal</span></div>
+          </div>
+          <div class="rcol">
+            <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
+              <p>Peta dimodelkan sebagai <b>data</b> — zona, titik, aturan akses, konten ID dan EN — supaya staf non-teknis bisa mengubah isi tanpa deploy. Bobotnya 15%, setara showcase mode.</p></div>
+            <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
+              <p><b>Jangan pakai GPS</b> di lahan 7,2 ha, pakai QR checkpoint. Enam puluh siswa serentak di wifi kawasan: muat sekali, lalu jalan dari cache. Showcase mode cukup route terpisah <code>/showcase</code> untuk layar besar.</p></div>
+          </div>
+        </div>
+        <div class="pipe"><span class="plabel">Deploy</span>
+          <span class="node">git push</span><span class="seg"></span>
+          <span class="node">Vercel build</span><span class="seg"></span>
+          <span class="node">Supabase (konten)</span><span class="seg"></span>
+          <span class="node live">Live URL + QR</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · DESA DIGITAL -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Use case 03 / 04</span>
+        <div class="uc-head">
+          <h2>Desa Digital</h2>
+          <div class="uc-tag"><b>ERP pemerintahan desa</b> · data induk + satu pilar</div>
+        </div>
+        <div class="uc-grid">
+          <div class="panel">
+            <p class="panel-label">Stack gratis</p>
+            <div class="srow"><span class="role">Frontend</span><span class="val">Next.js PWA → Vercel<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">DB · Auth</span><span class="val">Supabase + Row Level Security<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">Surat / PDF</span><span class="val">pdfmake · react-pdf</span></div>
+            <div class="srow"><span class="role">Data sintetis</span><span class="val">Faker.js (locale id_ID)<span class="free">FREE</span></span></div>
+          </div>
+          <div class="rcol">
+            <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
+              <p>Satu <b>data induk penduduk</b> dan keluarga yang dibaca semua modul. Hak akses ditegakkan di RLS, bukan sekadar disembunyikan di tampilan — privasi berbobot 15%.</p></div>
+            <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
+              <p>Data penduduk <b>wajib sintetis</b>: NIK, KK, dan nama palsu. Masukkan kekacauannya dengan sengaja — duplikat, salah ejaan, warga pindah. Riwayat perubahan = tabel audit <i>append-only</i>. Siskeudes jangan dibangun ulang.</p></div>
+          </div>
+        </div>
+        <div class="pipe"><span class="plabel">Deploy</span>
+          <span class="node">git push</span><span class="seg"></span>
+          <span class="node">Vercel build</span><span class="seg"></span>
+          <span class="node">Supabase + RLS + audit log</span><span class="seg"></span>
+          <span class="node live">Live URL</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 · HISWA-RECRON -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Use case 04 / 04</span>
+        <div class="uc-head">
+          <h2>HISWA-RECRON</h2>
+          <div class="uc-tag"><b>Game penemuan karier</b> · stan dan sekolah, satu codebase</div>
+        </div>
+        <div class="uc-grid">
+          <div class="panel">
+            <p class="panel-label">Stack gratis</p>
+            <div class="srow"><span class="role">Site</span><span class="val">Vite / Astro → Netlify · CF Pages<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">Offline</span><span class="val">Service Worker (Workbox)<span class="free">FREE</span></span></div>
+            <div class="srow"><span class="role">Teks NL</span><span class="val">JSON i18n, tanpa hardcode</span></div>
+            <div class="srow"><span class="role">Counter</span><span class="val">Supabase, agregat saja<span class="free">FREE</span></span></div>
+          </div>
+          <div class="rcol">
+            <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
+              <p>Tanpa akun dan tanpa backend berat, jadi <b>static build + CDN</b>: biaya nol dan tetap hidup saat wifi acara 30.000 orang tumbang.</p></div>
+            <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
+              <p>Perangkat bersama, jadi <b>reset harus instan</b> dan progres tidak boleh nyangkut di <code>localStorage</code>. Satu URL untuk dua konteks lewat query param (<code>?ctx=stand</code> / <code>?ctx=school</code>), bukan dua repo. Tanpa analitik pihak ketiga — pemain di bawah umur, tunduk AVG.</p></div>
+          </div>
+        </div>
+        <div class="pipe"><span class="plabel">Deploy</span>
+          <span class="node">git push</span><span class="seg"></span>
+          <span class="node">Build static</span><span class="seg"></span>
+          <span class="node">CDN Netlify / CF</span><span class="seg"></span>
+          <span class="node live">Live URL + QR</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 · CHEAT SHEET -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Recap</span>
+        <h2>Cheat-sheet — <em>empat case sekali lihat</em></h2>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Use case</th><th>Stack inti gratis</th><th>Kunci yang harus benar</th></tr></thead>
+            <tbody>
+              <tr><td class="uc">Monitoring Pariwisata</td><td class="stack">Vercel + Supabase + Leaflet / Recharts</td><td class="key">Offline-first · pendapatan dihitung dari seri karcis</td></tr>
+              <tr><td class="uc">Solo Technopark</td><td class="stack">Vercel + Supabase + SVG map + next-intl</td><td class="key">QR checkpoint, bukan GPS · konten bisa diedit staf</td></tr>
+              <tr><td class="uc">Desa Digital</td><td class="stack">Vercel + Supabase RLS + pdfmake + Faker</td><td class="key">Satu data induk · data sintetis · audit log</td></tr>
+              <tr><td class="uc">HISWA-RECRON</td><td class="stack">Netlify / CF Pages + Workbox + i18n NL</td><td class="key">Offline &amp; reset instan · satu codebase, dua pintu</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="caption">Angka apa pun yang kamu tampilkan di demo adalah data simulasi. Beri label jelas di prototipe dan di deck.</p>
+      </div>
+    </section>
+
+    <!-- 10 · JEBAKAN -->
+    <section class="slide">
+      <div class="inner">
+        <span class="eyebrow">Hindari ini</span>
+        <h2>Jebakan umum <em>72 jam</em></h2>
+        <div class="vs">
+          <div class="vs-head bad">Jangan</div><div class="vs-head good">Lakukan</div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>Deploy baru di jam terakhir, integrasi gagal dan panik.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Deploy hari-1</b>, push tiap ada progress.</span></div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>API key ke-commit ke GitHub, bocor atau di-revoke.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span>Simpan di <b>env vars</b>, <code>.env</code> masuk <code>.gitignore</code>.</span></div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>Bangun dashboard dulu, input lapangan belakangan.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Sisi lapangan dan data layer dulu</b> — di situ bobot nilainya.</span></div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>Andalkan GPS di kawasan sempit, atau online-only.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>QR checkpoint</b> plus offline-first sejak jam awal.</span></div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>Pakai data penduduk atau pengunjung yang asli.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Data sintetis</b>, tanpa akun untuk pemain di bawah umur.</span></div>
+          <div class="pit"><span class="i">{{ICO_X}}</span><span>Demo pakai localhost atau halaman kosong.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Live URL</b> dengan seed data realistis berlabel simulasi.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 · CLOSING -->
+    <section class="slide closing">
+      <div class="inner">
+        <span class="eyebrow">Sebelum penjurian</span>
+        <h2>Deliverable <em>checklist</em></h2>
+        <div class="deliver">
+          <div class="dl"><div class="badge">{{ICO_GLOBE}}</div><div><div class="t">Prototipe ter-deploy</div><div class="s">URL tayang yang bisa dibuka juri, bukan localhost</div></div></div>
+          <div class="dl"><div class="badge">{{ICO_GIT}}</div><div><div class="t">Repository + README</div><div class="s">GitHub, commit rapi, cara setup dan arsitektur</div></div></div>
+          <div class="dl"><div class="badge">{{ICO_PLAY}}</div><div><div class="t">Video demo, maks 5 menit</div><div class="s">Satu alur nyata end-to-end, bukan tur fitur</div></div></div>
+          <div class="dl"><div class="badge">{{ICO_DECK}}</div><div><div class="t">Satu halaman keputusan tim</div><div class="s">Apa yang dibangun, apa yang sengaja tidak, plus seed data</div></div></div>
+        </div>
+        <p class="signoff">Deploy early, deploy often.<br><em>Selamat membangun!</em></p>
+        <p class="lead">Pertanyaan teknis di luar sesi ini: salurkan lewat panitia.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="dots" id="dots"></div>
+
+<nav class="nav">
+  <button id="prev" aria-label="Slide sebelumnya">{{ICO_PREV}}</button>
+  <button id="next" aria-label="Slide berikutnya">{{ICO_NEXT}}</button>
+</nav>
+
+<div class="hint"><span class="kbd">←</span><span class="kbd">→</span> navigasi · <span class="kbd">F</span> fullscreen</div>
+
+<script>
+(function(){
+  var I = {
+    GLOBE:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',
+    DB:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    SERVER:'<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
+    WIFI:'<path d="M2 8.5a16 16 0 0 1 20 0M5 12.5a11 11 0 0 1 14 0M8.5 16.5a6 6 0 0 1 7 0"/><path d="M12 20h.01"/>',
+    MAP:'<path d="m9 4 6 2.5 5-2v13.5l-5 2L9 17.5l-5 2V6z"/><path d="M9 4v13.5M15 6.5V20"/>',
+    BOT:'<rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 4v4M8 13h.01M16 13h.01M9 17h6"/>',
+    DATA:'<path d="M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    LOCK:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    GIT:'<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 3-4 2.5-6 4.5"/>',
+    TARGET:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+    BULB:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    ALERT:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/>',
+    CHECK:'<path d="m5 12 5 5L20 6"/>',
+    X:'<path d="M6 6l12 12M18 6 6 18"/>',
+    DECK:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v3M8 21h8"/>',
+    PLAY:'<circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z"/>',
+    PREV:'<path d="M15 6l-6 6 6 6"/>',
+    NEXT:'<path d="M9 6l6 6-6 6"/>'
+  };
+  function svg(p){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';}
+  var html = document.body.innerHTML;
+  Object.keys(I).forEach(function(k){ html = html.split('{{ICO_'+k+'}}').join(svg(I[k])); });
+  document.body.innerHTML = html;
+
+  var track = document.getElementById('track');
+  var slides = Array.prototype.slice.call(track.children);
+  var n = slides.length, i = 0;
+  var rail = document.getElementById('rail');
+  var cur = document.getElementById('cur');
+  var prev = document.getElementById('prev');
+  var next = document.getElementById('next');
+  var dotsWrap = document.getElementById('dots');
+  document.getElementById('total').textContent = String(n).padStart(2,'0');
+
+  for (var d = 0; d < n; d++){
+    var b = document.createElement('button');
+    b.className = 'dot';
+    b.setAttribute('aria-label','Slide ' + (d+1));
+    (function(idx){ b.onclick = function(){ go(idx); }; })(d);
+    dotsWrap.appendChild(b);
+  }
+  var dots = Array.prototype.slice.call(dotsWrap.children);
+
+  function go(x){
+    i = Math.max(0, Math.min(n-1, x));
+    track.style.transform = 'translateX(-' + (i*100) + '%)';
+    rail.style.width = ((i+1)/n*100) + '%';
+    cur.textContent = String(i+1).padStart(2,'0');
+    prev.disabled = i === 0;
+    next.disabled = i === n-1;
+    dots.forEach(function(dd,k){ dd.classList.toggle('on', k === i); });
+    slides[i].scrollTop = 0;
+    if (location.hash !== '#' + (i+1)) history.replaceState(null,'','#'+(i+1));
+  }
+  prev.onclick = function(){ go(i-1); };
+  next.onclick = function(){ go(i+1); };
+
+  document.addEventListener('keydown', function(e){
+    if (e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); go(i+1); }
+    else if (e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(i-1); }
+    else if (e.key==='Home'){ go(0); }
+    else if (e.key==='End'){ go(n-1); }
+    else if (e.key==='f'||e.key==='F'){
+      if (!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+      else { document.exitFullscreen && document.exitFullscreen(); }
+    }
+  });
+
+  var sx = 0;
+  track.addEventListener('touchstart', function(e){ sx = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - sx;
+    if (Math.abs(dx) > 60) go(dx < 0 ? i+1 : i-1);
+  }, {passive:true});
+
+  var start = parseInt((location.hash||'').slice(1), 10);
+  go(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</html>
