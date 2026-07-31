@@ -257,7 +257,7 @@
           <span class="eyebrow">Helden 72 · Chapter 2 · Sesi panitia</span>
           <h1>Deployment<br><em>&amp; DevOps</em>.</h1>
           <span class="underline"></span>
-          <p class="lead">Cara men-<em style="color:inherit;font-style:italic">deploy</em> proyek kamu pakai tools gratis — dengan rekomendasi stack spesifik untuk setiap use case, biar 72 jam dipakai membangun, bukan berkutat infrastruktur.</p>
+          <p class="lead">Cara men-<em style="color:inherit;font-style:italic">deploy</em> proyek kamu pakai tools gratis, dengan rekomendasi stack spesifik untuk setiap use case, biar 72 jam dipakai membangun, bukan berkutat infrastruktur.</p>
           <div class="pills">
             <span class="pill">4 use case</span>
             <span class="pill">Semua stack free-tier</span>
@@ -400,7 +400,7 @@
           </div>
           <div class="rcol">
             <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
-              <p>Peta dimodelkan sebagai <b>data</b> — zona, titik, aturan akses, konten ID dan EN — supaya staf non-teknis bisa mengubah isi tanpa deploy. Bobotnya 15%, setara showcase mode.</p></div>
+              <p>Peta dimodelkan sebagai <b>data</b> (zona, titik, aturan akses, konten ID dan EN) supaya staf non-teknis bisa mengubah isi tanpa deploy. Bobotnya 15%, setara showcase mode.</p></div>
             <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
               <p><b>Jangan pakai GPS</b> di lahan 7,2 ha, pakai QR checkpoint. Enam puluh siswa serentak di wifi kawasan: muat sekali, lalu jalan dari cache. Showcase mode cukup route terpisah <code>/showcase</code> untuk layar besar.</p></div>
           </div>
@@ -432,9 +432,9 @@
           </div>
           <div class="rcol">
             <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
-              <p>Satu <b>data induk penduduk</b> dan keluarga yang dibaca semua modul. Hak akses ditegakkan di RLS, bukan sekadar disembunyikan di tampilan — privasi berbobot 15%.</p></div>
+              <p>Satu <b>data induk penduduk</b> dan keluarga yang dibaca semua modul. Hak akses ditegakkan di RLS, bukan sekadar disembunyikan di tampilan. Privasi berbobot 15%.</p></div>
             <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
-              <p>Data penduduk <b>wajib sintetis</b>: NIK, KK, dan nama palsu. Masukkan kekacauannya dengan sengaja — duplikat, salah ejaan, warga pindah. Riwayat perubahan = tabel audit <i>append-only</i>. Siskeudes jangan dibangun ulang.</p></div>
+              <p>Data penduduk <b>wajib sintetis</b>: NIK, KK, dan nama palsu. Masukkan kekacauannya dengan sengaja: duplikat, salah ejaan, warga pindah. Riwayat perubahan = tabel audit <i>append-only</i>. Siskeudes jangan dibangun ulang.</p></div>
           </div>
         </div>
         <div class="pipe"><span class="plabel">Deploy</span>
@@ -466,7 +466,7 @@
             <div class="note"><div class="nlabel">{{ICO_BULB}} Kenapa</div>
               <p>Tanpa akun dan tanpa backend berat, jadi <b>static build + CDN</b>: biaya nol dan tetap hidup saat wifi acara 30.000 orang tumbang.</p></div>
             <div class="note gotcha"><div class="nlabel">{{ICO_ALERT}} Gotcha</div>
-              <p>Perangkat bersama, jadi <b>reset harus instan</b> dan progres tidak boleh nyangkut di <code>localStorage</code>. Satu URL untuk dua konteks lewat query param (<code>?ctx=stand</code> / <code>?ctx=school</code>), bukan dua repo. Tanpa analitik pihak ketiga — pemain di bawah umur, tunduk AVG.</p></div>
+              <p>Perangkat bersama, jadi <b>reset harus instan</b> dan progres tidak boleh nyangkut di <code>localStorage</code>. Satu URL untuk dua konteks lewat query param (<code>?ctx=stand</code> / <code>?ctx=school</code>), bukan dua repo. Tanpa analitik pihak ketiga: pemain di bawah umur, tunduk AVG.</p></div>
           </div>
         </div>
         <div class="pipe"><span class="plabel">Deploy</span>
@@ -482,7 +482,7 @@
     <section class="slide">
       <div class="inner">
         <span class="eyebrow">Recap</span>
-        <h2>Cheat-sheet — <em>empat case sekali lihat</em></h2>
+        <h2>Cheat-sheet <em>empat case sekali lihat</em></h2>
         <div class="tablewrap">
           <table>
             <thead><tr><th>Use case</th><th>Stack inti gratis</th><th>Kunci yang harus benar</th></tr></thead>
@@ -510,7 +510,7 @@
           <div class="pit"><span class="i">{{ICO_X}}</span><span>API key ke-commit ke GitHub, bocor atau di-revoke.</span></div>
           <div class="fix"><span class="i">{{ICO_CHECK}}</span><span>Simpan di <b>env vars</b>, <code>.env</code> masuk <code>.gitignore</code>.</span></div>
           <div class="pit"><span class="i">{{ICO_X}}</span><span>Bangun dashboard dulu, input lapangan belakangan.</span></div>
-          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Sisi lapangan dan data layer dulu</b> — di situ bobot nilainya.</span></div>
+          <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>Sisi lapangan dan data layer dulu</b>, di situ bobot nilainya.</span></div>
           <div class="pit"><span class="i">{{ICO_X}}</span><span>Andalkan GPS di kawasan sempit, atau online-only.</span></div>
           <div class="fix"><span class="i">{{ICO_CHECK}}</span><span><b>QR checkpoint</b> plus offline-first sejak jam awal.</span></div>
           <div class="pit"><span class="i">{{ICO_X}}</span><span>Pakai data penduduk atau pengunjung yang asli.</span></div>
